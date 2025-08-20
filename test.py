@@ -65,10 +65,12 @@ if "question_num" not in st.session_state:
     st.session_state.question_num = 0
 if "current_question" not in st.session_state:
     st.session_state.current_question = None
-if "start_time" not in st.session_state:
-    st.session_state.start_time = None
+if "question_start" not in st.session_state:
+    st.session_state.question_start = None
 if "clicked_option" not in st.session_state:
     st.session_state.clicked_option = None
+if "next_question_time" not in st.session_state:
+    st.session_state.next_question_time = None
 
 # ---------------------------
 # 새 문제 생성
@@ -84,8 +86,9 @@ def new_question():
         "correct": correct_meaning,
         "options": options
     }
-    st.session_state.start_time = time.time()
+    st.session_state.question_start = time.time()
     st.session_state.clicked_option = None
+    st.session_state.next_question_time = None
 
 # ---------------------------
 # 학습 화면
@@ -100,9 +103,7 @@ if st.session_state.page == "study":
         st.session_state.score = 0
         st.session_state.question_num = 0
         st.session_state.current_question = None
-        st.session_state.start_time = None
-        st.session_state.clicked_option = None
-        st.rerun()
+        new_question()
 
 # ---------------------------
 # 퀴즈 화면
@@ -112,7 +113,7 @@ elif st.session_state.page == "quiz":
         new_question()
     q = st.session_state.current_question
 
-    elapsed = int(time.time() - st.session_state.start_time)
+    elapsed = int(time.time() - st.session_state.question_start)
     remaining = max(TIME_LIMIT - elapsed, 0)
     progress = remaining / TIME_LIMIT
 
@@ -122,16 +123,20 @@ elif st.session_state.page == "quiz":
     st.progress(progress)
     st.write(f"⏳ 남은 시간: {remaining}초")
 
+    # 시간 초과 시 처리
+    if remaining <= 0 and st.session_state.clicked_option is None:
+        st.session_state.clicked_option = "timeout"
+        st.session_state.next_question_time = time.time() + 1.5
+
     # 버튼 표시
     cols = st.columns(2)
     for i, option in enumerate(q["options"]):
         col = cols[i % 2]
-
-        # 색상 결정
         if st.session_state.clicked_option is not None:
+            # 정답/오답 색상 적용
             if option == q["correct"]:
                 style_class = "button-style button-correct"
-            elif option == st.session_state.clicked_option:
+            elif option == st.session_state.clicked_option and st.session_state.clicked_option != "timeout":
                 style_class = "button-style button-wrong"
             else:
                 style_class = "button-style"
@@ -141,24 +146,18 @@ elif st.session_state.page == "quiz":
                 st.session_state.clicked_option = option
                 if option == q["correct"]:
                     st.session_state.score += 1
-                st.session_state.start_time = time.time()
-                st.experimental_rerun()
-
-    # 시간 초과 처리
-    if remaining <= 0 and st.session_state.clicked_option is None:
-        st.session_state.clicked_option = "timeout"
-        st.experimental_rerun()
+                st.session_state.next_question_time = time.time() + 1.5
 
     # 다음 문제 이동
-    if st.session_state.clicked_option is not None:
-        if time.time() - st.session_state.start_time >= 1.5:
-            st.session_state.question_num += 1
-            if st.session_state.question_num >= TOTAL_QUESTIONS:
-                st.session_state.page = "result"
-            st.session_state.current_question = None
-            st.session_state.start_time = None
-            st.session_state.clicked_option = None
-            st.experimental_rerun()
+    if st.session_state.next_question_time and time.time() >= st.session_state.next_question_time:
+        st.session_state.question_num += 1
+        if st.session_state.question_num >= TOTAL_QUESTIONS:
+            st.session_state.page = "result"
+        st.session_state.current_question = None
+        st.session_state.question_start = None
+        st.session_state.clicked_option = None
+        st.session_state.next_question_time = None
+        st.experimental_rerun()
 
 # ---------------------------
 # 결과 화면
@@ -171,6 +170,7 @@ elif st.session_state.page == "result":
         st.session_state.score = 0
         st.session_state.question_num = 0
         st.session_state.current_question = None
-        st.session_state.start_time = None
+        st.session_state.question_start = None
         st.session_state.clicked_option = None
+        st.session_state.next_question_time = None
         st.rerun()
