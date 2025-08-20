@@ -4,7 +4,9 @@ import time
 
 st.set_page_config(page_title="영단어 퀴즈", layout="wide")
 
+# ---------------------------
 # 단어 데이터
+# ---------------------------
 word_list = {
     "abandon": "버리다",
     "accelerate": "가속하다",
@@ -18,8 +20,11 @@ word_list = {
     "demonstrate": "증명하다"
 }
 
-TIME_LIMIT = 10  # 제한 시간
+TIME_LIMIT = 10  # 제한 시간(초)
 
+# ---------------------------
+# 세션 초기화
+# ---------------------------
 if "score" not in st.session_state:
     st.session_state.score = 0
 if "question_num" not in st.session_state:
@@ -29,6 +34,9 @@ if "current_question" not in st.session_state:
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
 
+# ---------------------------
+# 새 문제 생성 함수
+# ---------------------------
 def new_question():
     eng_word = random.choice(list(word_list.keys()))
     correct_meaning = word_list[eng_word]
@@ -42,36 +50,40 @@ def new_question():
     }
     st.session_state.start_time = time.time()
 
-# 첫 문제 생성
+# ---------------------------
+# 문제 준비
+# ---------------------------
 if st.session_state.current_question is None:
     new_question()
 
 q = st.session_state.current_question
-elapsed = time.time() - st.session_state.start_time
-remaining = max(TIME_LIMIT - int(elapsed), 0)
+
+# ---------------------------
+# 남은 시간 계산
+# ---------------------------
+elapsed = int(time.time() - st.session_state.start_time)
+remaining = max(TIME_LIMIT - elapsed, 0)
+progress = remaining / TIME_LIMIT
 
 st.title("📝 영단어 퀴즈")
 st.subheader(f"문제 {st.session_state.question_num+1}/10")
 st.markdown(f"### '{q['eng_word']}' 의 뜻은 무엇일까요?")
 
 # 프로그레스바
-progress_bar = st.progress(remaining / TIME_LIMIT)
+st.progress(progress)
 
-# 4개의 선택지 버튼을 네모상자 느낌으로 배치
+# 4개 버튼을 2열로
 cols = st.columns(2)
 clicked = None
 
 for i, option in enumerate(q["options"]):
-    if i % 2 == 0:
-        with cols[0]:
-            if st.button(option, key=f"opt_{i}"):
-                clicked = option
-    else:
-        with cols[1]:
-            if st.button(option, key=f"opt_{i}"):
-                clicked = option
+    col = cols[i % 2]
+    if col.button(option, key=f"opt_{i}"):
+        clicked = option
 
+# ---------------------------
 # 제출 또는 시간 초과 처리
+# ---------------------------
 if clicked or remaining == 0:
     if remaining == 0 and clicked is None:
         st.error("⏰ 시간 초과! 오답 처리됩니다.")
@@ -79,7 +91,7 @@ if clicked or remaining == 0:
         st.success("✅ 정답!")
         st.session_state.score += 1
     else:
-        st.error(f"❌ 오답! 정답은 '{q['correct']}' 입니다.")
+        st.error(f"❌ 오답! 정답은 '{q['correct']}'")
 
     st.session_state.question_num += 1
     if st.session_state.question_num >= 10:
