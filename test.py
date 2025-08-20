@@ -2,92 +2,97 @@ import streamlit as st
 import random
 import time
 
-st.set_page_config(page_title="영단어 퀴즈", page_icon="📘", layout="centered")
-
-# 고등 모의고사 자주 나오는 단어 샘플 (확장 가능)
-word_dict = {
-    "abandon": "버리다",
-    "abstract": "추상적인",
-    "adolescent": "청소년",
+# ---------------------------
+# 단어 데이터 (고등 모의고사 빈출 단어)
+# ---------------------------
+word_list = {
+    "abandon": "버리다, 포기하다",
+    "accelerate": "가속하다, 촉진하다",
+    "acquire": "얻다, 습득하다",
+    "adapt": "적응하다",
+    "allocate": "할당하다, 배분하다",
     "analyze": "분석하다",
-    "assume": "가정하다",
-    "collapse": "붕괴하다",
-    "contrast": "대조",
-    "crucial": "중요한",
-    "demonstrate": "증명하다",
+    "anticipate": "예상하다",
+    "approximate": "대략의, 근사한",
+    "artificial": "인공의, 인위적인",
+    "assume": "가정하다, 맡다",
+    "attain": "달성하다, 도달하다",
+    "beneficial": "유익한, 이로운",
+    "collapse": "붕괴하다, 무너지다",
+    "concentrate": "집중하다",
+    "contribute": "기여하다, 공헌하다",
+    "crucial": "중요한, 결정적인",
+    "determine": "결정하다, 알아내다",
     "distinguish": "구별하다",
-    "emerge": "나타나다",
-    "generate": "생성하다",
-    "illustrate": "설명하다",
-    "inevitable": "피할 수 없는",
+    "eliminate": "제거하다",
+    "encounter": "우연히 만나다, 직면하다",
+    "exaggerate": "과장하다",
+    "expand": "확장하다, 팽창하다",
+    "generate": "생산하다, 발생시키다",
+    "identify": "식별하다",
+    "imply": "암시하다",
     "interpret": "해석하다",
-    "justify": "정당화하다",
-    "maintain": "유지하다",
-    "notion": "개념",
-    "persuade": "설득하다",
-    "precise": "정확한",
-    "regulate": "규제하다",
-    "relevant": "관련 있는",
-    "significant": "중요한",
-    "sustain": "지속하다",
-    "tend": "경향이 있다"
+    "maintain": "유지하다, 주장하다",
+    "obtain": "얻다, 획득하다",
+    "predict": "예측하다",
+    "propose": "제안하다",
+    "recall": "기억하다, 상기하다",
+    "reduce": "줄이다",
+    "reinforce": "강화하다",
+    "rely": "의지하다",
+    "require": "요구하다",
+    "resolve": "해결하다, 결심하다",
+    "retain": "유지하다",
+    "significant": "중요한, 의미있는",
+    "transform": "변화시키다",
 }
 
+# ---------------------------
+# 상태 초기화
+# ---------------------------
+if "page" not in st.session_state:
+    st.session_state.page = "study"  # 시작은 단어 학습 화면
 if "score" not in st.session_state:
     st.session_state.score = 0
-if "question_count" not in st.session_state:
-    st.session_state.question_count = 0
-if "quiz_word" not in st.session_state:
-    st.session_state.quiz_word = None
-if "options" not in st.session_state:
-    st.session_state.options = []
-if "timer_start" not in st.session_state:
-    st.session_state.timer_start = None
-if "time_limit" not in st.session_state:
-    st.session_state.time_limit = 10  # 제한 시간 (초)
+if "question" not in st.session_state:
+    st.session_state.question = 0
 
-def new_question():
-    st.session_state.quiz_word = random.choice(list(word_dict.keys()))
-    correct_answer = word_dict[st.session_state.quiz_word]
+# ---------------------------
+# 단어 학습 화면
+# ---------------------------
+if st.session_state.page == "study":
+    st.title("📘 단어 학습하기")
+    st.write("아래 단어들을 먼저 외워보세요. 준비가 되면 '퀴즈 시작' 버튼을 누르세요.")
+    
+    # 단어 테이블 표시
+    st.table({"영단어": list(word_list.keys()), "뜻": list(word_list.values())})
+    
+    if st.button("퀴즈 시작 🚀"):
+        st.session_state.page = "quiz"
+        st.session_state.score = 0
+        st.session_state.question = 0
+        st.rerun()
 
-    # 보기 만들기
-    options = [correct_answer]
-    while len(options) < 4:
-        wrong = random.choice(list(word_dict.values()))
-        if wrong not in options:
-            options.append(wrong)
-    random.shuffle(options)
+# ---------------------------
+# 퀴즈 화면
+# ---------------------------
+elif st.session_state.page == "quiz":
+    st.title("📝 단어 퀴즈")
+    st.write(f"문제 {st.session_state.question + 1} / 10")
 
-    st.session_state.options = options
-    st.session_state.timer_start = time.time()
+    words = list(word_list.keys())
+    answer_word = random.choice(words)
+    answer_meaning = word_list[answer_word]
 
-# 첫 문제 세팅
-if st.session_state.quiz_word is None:
-    new_question()
+    # 문제 유형 랜덤 선택
+    question_type = random.choice(["word_to_meaning", "meaning_to_word"])
 
-st.title("📘 영단어 퀴즈")
-st.write(f"점수: {st.session_state.score} | 문제 수: {st.session_state.question_count}")
-
-# 남은 시간 표시
-elapsed = time.time() - st.session_state.timer_start
-remaining = max(st.session_state.time_limit - int(elapsed), 0)
-progress = remaining / st.session_state.time_limit
-st.progress(progress)
-
-st.subheader(f"❓ '{st.session_state.quiz_word}' 의 뜻은?")
-
-# 정답 선택
-choice = st.radio("보기:", st.session_state.options)
-
-if st.button("제출"):
-    if remaining <= 0:
-        st.error("⏰ 시간 초과! 정답을 맞히지 못했습니다.")
-    elif choice == word_dict[st.session_state.quiz_word]:
-        st.success("✅ 정답입니다!")
-        st.session_state.score += 1
+    if question_type == "word_to_meaning":
+        st.subheader(f"👉 {answer_word} 의 뜻은?")
+        options = random.sample(list(word_list.values()), 3)
+        if answer_meaning not in options:
+            options.append(answer_meaning)
+        random.shuffle(options)
+        correct_answer = answer_meaning
     else:
-        st.error(f"❌ 오답입니다. 정답은 '{word_dict[st.session_state.quiz_word]}' 입니다.")
-
-    st.session_state.question_count += 1
-    new_question()
-    st.rerun()
+        st.subheader(f"👉 '{answer_meaning}' 에 해당하는 단어는?")
