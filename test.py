@@ -5,6 +5,37 @@ import time
 st.set_page_config(page_title="영단어 퀴즈", layout="wide")
 
 # ---------------------------
+# CSS 스타일
+# ---------------------------
+st.markdown("""
+<style>
+.button-style {
+    width: 100%;
+    height: 70px;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 5px 0;
+    border-radius: 12px;
+    border: none;
+    transition: 0.3s;
+    cursor: pointer;
+}
+.button-style:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transform: scale(1.05);
+}
+.button-correct {
+    background-color: #4CAF50;
+    color: white;
+}
+.button-wrong {
+    background-color: #f44336;
+    color: white;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------
 # 단어 데이터
 # ---------------------------
 word_list = {
@@ -20,7 +51,7 @@ word_list = {
     "demonstrate": "증명하다"
 }
 
-TIME_LIMIT = 10  # 제한 시간(초)
+TIME_LIMIT = 10
 TOTAL_QUESTIONS = 10
 
 # ---------------------------
@@ -40,7 +71,7 @@ if "clicked_option" not in st.session_state:
     st.session_state.clicked_option = None
 
 # ---------------------------
-# 새 문제 생성 함수
+# 새 문제 생성
 # ---------------------------
 def new_question():
     eng_word = random.choice(list(word_list.keys()))
@@ -77,12 +108,10 @@ if st.session_state.page == "study":
 # 퀴즈 화면
 # ---------------------------
 elif st.session_state.page == "quiz":
-    # 문제 준비
     if st.session_state.current_question is None:
         new_question()
     q = st.session_state.current_question
 
-    # 남은 시간 계산
     elapsed = int(time.time() - st.session_state.start_time)
     remaining = max(TIME_LIMIT - elapsed, 0)
     progress = remaining / TIME_LIMIT
@@ -93,39 +122,36 @@ elif st.session_state.page == "quiz":
     st.progress(progress)
     st.write(f"⏳ 남은 시간: {remaining}초")
 
-    # 4개 선택지 버튼 표시
+    # 버튼 표시
     cols = st.columns(2)
     for i, option in enumerate(q["options"]):
         col = cols[i % 2]
 
-        # 버튼 색상 결정
+        # 색상 결정
         if st.session_state.clicked_option is not None:
             if option == q["correct"]:
-                color = "background-color:#4CAF50;color:white;"
+                style_class = "button-style button-correct"
             elif option == st.session_state.clicked_option:
-                color = "background-color:#f44336;color:white;"
+                style_class = "button-style button-wrong"
             else:
-                color = ""
-            col.markdown(f"<button style='{color}width:100%;height:60px'>{option}</button>", unsafe_allow_html=True)
+                style_class = "button-style"
+            col.markdown(f"<button class='{style_class}'>{option}</button>", unsafe_allow_html=True)
         else:
             if col.button(option, key=f"opt_{i}"):
                 st.session_state.clicked_option = option
-                # 점수 증가
                 if option == q["correct"]:
                     st.session_state.score += 1
-                # 다음 문제를 위해 start_time 초기화
                 st.session_state.start_time = time.time()
                 st.experimental_rerun()
 
-    # 시간 초과 시 자동 다음 문제
+    # 시간 초과 처리
     if remaining <= 0 and st.session_state.clicked_option is None:
         st.session_state.clicked_option = "timeout"
         st.experimental_rerun()
 
-    # 문제 종료 후 다음 문제 이동
+    # 다음 문제 이동
     if st.session_state.clicked_option is not None:
-        # 다음 문제로 넘어가기 위해 잠깐 대기
-        if time.time() - st.session_state.start_time >= 1.5:  # 1.5초 후
+        if time.time() - st.session_state.start_time >= 1.5:
             st.session_state.question_num += 1
             if st.session_state.question_num >= TOTAL_QUESTIONS:
                 st.session_state.page = "result"
