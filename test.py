@@ -39,4 +39,44 @@ if len(st.session_state.words) > 0:
         answer = st.text_input("정답 입력", key="ans1")
         if st.button("제출", key="submit1"):
             if answer.strip().lower() == q['meaning'].lower():
+                st.session_state.score += 1
+                st.success("✅ 정답!")
+            else:
+                st.error(f"❌ 오답! 정답은 {q['meaning']}")
+            st.session_state.history.append(("뜻 맞추기", q['word'], answer))
+
+    elif question_type == "단어 맞추기":
+        st.write(f"❓ 뜻: **{q['meaning']}** 인 단어는?")
+        answer = st.text_input("정답 입력", key="ans2")
+        if st.button("제출", key="submit2"):
+            if answer.strip().lower() == q['word'].lower():
+                st.session_state.score += 1
+                st.success("✅ 정답!")
+            else:
+                st.error(f"❌ 오답! 정답은 {q['word']}")
+            st.session_state.history.append(("단어 맞추기", q['meaning'], answer))
+
+    else:  # 빈칸 맞추기
+        if q['example']:
+            sentence = q['example'].replace(q['word'], "____")
+            st.write(f"❓ 빈칸 채우기: {sentence}")
+            answer = st.text_input("정답 입력", key="ans3")
+            if st.button("제출", key="submit3"):
+                if answer.strip().lower() == q['word'].lower():
+                    st.session_state.score += 1
+                    st.success("✅ 정답!")
+                else:
+                    st.error(f"❌ 오답! 정답은 {q['word']}")
+                st.session_state.history.append(("빈칸 맞추기", sentence, answer))
+
+# -------------------------------
+# 3. 점수 & 기록
+# -------------------------------
+st.markdown("---")
+st.write(f"📊 현재 점수: **{st.session_state.score}**")
+
+if st.button("기록 저장하기 💾"):
+    df = pd.DataFrame(st.session_state.history, columns=["문제 유형", "문제", "내 답"])
+    df.to_csv("quiz_history.csv", index=False)
+    st.success("기록이 저장되었습니다!")
 
