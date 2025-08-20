@@ -157,7 +157,7 @@ elif st.session_state.page == "quiz":
         st.session_state.question_start = None
         st.session_state.clicked_option = None
         st.session_state.next_question_time = None
-        st.experimental_rerun()
+        st.experimental_rerun()  # 버튼 클릭 때만 안전하게 호출
 
 # ---------------------------
 # 결과 화면
