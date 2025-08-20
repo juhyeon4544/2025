@@ -1,74 +1,135 @@
 import streamlit as st
 import random
-import pandas as pd
+import time
 
-st.set_page_config(page_title="고등생용 영어 객관식 퀴즈", page_icon="📚")
+# ------------------------------
+# 고등 모의고사/수능 빈출 단어 50개
+# ------------------------------
+word_dict = {
+    "abandon": "버리다, 포기하다",
+    "abstract": "추상적인",
+    "accessible": "접근 가능한",
+    "accomplish": "완수하다",
+    "acquire": "얻다, 습득하다",
+    "adapt": "적응하다",
+    "adequate": "충분한",
+    "affect": "영향을 미치다",
+    "alter": "바꾸다",
+    "analyze": "분석하다",
+    "ancient": "고대의",
+    "anticipate": "예상하다",
+    "apparent": "분명한",
+    "approach": "접근하다",
+    "appropriate": "적절한",
+    "assume": "가정하다",
+    "attempt": "시도하다",
+    "benefit": "이익, 혜택",
+    "broaden": "넓히다",
+    "collapse": "붕괴하다",
+    "comprehend": "이해하다",
+    "conceal": "숨기다",
+    "conclude": "결론짓다",
+    "conduct": "수행하다",
+    "consequence": "결과",
+    "considerable": "상당한",
+    "constant": "끊임없는",
+    "contribute": "기여하다",
+    "convince": "설득하다",
+    "critical": "중대한, 비판적인",
+    "crucial": "결정적인",
+    "decline": "감소하다",
+    "demonstrate": "증명하다, 보여주다",
+    "determine": "결정하다",
+    "distinct": "별개의, 뚜렷한",
+    "distribute": "분배하다",
+    "emerge": "나타나다",
+    "enable": "가능하게 하다",
+    "encounter": "마주치다",
+    "ensure": "보장하다",
+    "evaluate": "평가하다",
+    "exceed": "초과하다",
+    "expand": "확장하다",
+    "explore": "탐험하다, 조사하다",
+    "extend": "연장하다",
+    "familiar": "익숙한",
+    "fundamental": "근본적인",
+    "identify": "식별하다",
+    "illustrate": "설명하다",
+    "imply": "암시하다",
+    "indicate": "나타내다"
+}
 
-word_list = [
-    {"word": "accomplishment", "meaning": "달성, 성취"},
-    {"word": "assumption", "meaning": "가정, 추정"},
-    {"word": "collapse", "meaning": "붕괴하다"},
-    {"word": "evaluate", "meaning": "평가하다"},
-    {"word": "consequence", "meaning": "결과, 결말"},
-    {"word": "derive", "meaning": "유래하다"},
-    {"word": "opportunity", "meaning": "기회"},
-    {"word": "participate", "meaning": "참여하다"},
-]
-
+# ------------------------------
+# 세션 상태 관리
+# ------------------------------
 if "score" not in st.session_state:
     st.session_state.score = 0
-if "history" not in st.session_state:
-    st.session_state.history = []
+if "question_num" not in st.session_state:
+    st.session_state.question_num = 1
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
+if "time_limit" not in st.session_state:
+    st.session_state.time_limit = 15  # 문제당 제한시간 (초)
 
-st.title("📖 고등학생 빈출 단어 객관식 퀴즈")
+# ------------------------------
+# 문제 생성 함수
+# ------------------------------
+def generate_question():
+    eng_word = random.choice(list(word_dict.keys()))
+    correct_meaning = word_dict[eng_word]
 
-with st.expander("단어 학습하기 (빈출 단어 목록)"):
-    for w in word_list:
-        st.write(f"**{w['word']}** : {w['meaning']}")
-
-st.markdown("---")
-st.subheader("퀴즈 풀기")
-
-question_type = random.choice(["word_to_meaning", "meaning_to_word"])
-q = random.choice(word_list)
-
-def make_options(correct, all_options):
-    options = [correct]
-    while len(options) < 4:
-        choice = random.choice(all_options)
-        if choice not in options:
-            options.append(choice)
+    # 보기 만들기
+    wrong_answers = random.sample(
+        [v for k, v in word_dict.items() if v != correct_meaning], 3
+    )
+    options = wrong_answers + [correct_meaning]
     random.shuffle(options)
-    return options
 
-if question_type == "word_to_meaning":
-    st.write(f"❓ 단어 **{q['word']}**의 뜻은 무엇일까요?")
-    options = make_options(q["meaning"], [w["meaning"] for w in word_list])
-    answer = st.radio("정답:", options, key="opt1")
-    if st.button("제출", key="submit1"):
-        if answer == q["meaning"]:
-            st.session_state.score += 1
-            st.success("정답!👏")
-        else:
-            st.error(f"오답… 정답은 **{q['meaning']}**")
-        st.session_state.history.append(("단어→뜻", q['word'], answer))
+    return eng_word, correct_meaning, options
 
-else:
-    st.write(f"❓ 뜻 **{q['meaning']}**에 해당하는 단어는 무엇일까요?")
-    options = make_options(q["word"], [w["word"] for w in word_list])
-    answer = st.radio("정답:", options, key="opt2")
-    if st.button("제출", key="submit2"):
-        if answer == q["word"]:
-            st.session_state.score += 1
-            st.success("정답!👏")
-        else:
-            st.error(f"오답… 정답은 **{q['word']}**")
-        st.session_state.history.append(("뜻→단어", q['meaning'], answer))
+# ------------------------------
+# 앱 UI
+# ------------------------------
+st.title("📘 고등 영어 단어 퀴즈")
+st.write("⏳ 문제당 시간 제한:", st.session_state.time_limit, "초")
 
-st.markdown("---")
-st.write(f"현재 점수: **{st.session_state.score}**")
+# 새로운 문제 생성
+if "current_q" not in st.session_state:
+    st.session_state.current_q = generate_question()
 
-if st.button("기록 저장하기"):
-    df = pd.DataFrame(st.session_state.history, columns=["문제 유형", "문제", "내 답"])
-    df.to_csv("quiz_history.csv", index=False)
-    st.success("저장 완료!")
+eng_word, correct_meaning, options = st.session_state.current_q
+
+# 시간 시작
+if st.session_state.start_time is None:
+    st.session_state.start_time = time.time()
+
+elapsed_time = int(time.time() - st.session_state.start_time)
+remaining_time = st.session_state.time_limit - elapsed_time
+
+st.subheader(f"Q{st.session_state.question_num}. '{eng_word}'의 뜻은?")
+st.write(f"⏰ 남은 시간: {remaining_time}초")
+
+if remaining_time <= 0:
+    st.error("⏰ 시간 초과! 다음 문제로 넘어갑니다.")
+    st.session_state.question_num += 1
+    st.session_state.current_q = generate_question()
+    st.session_state.start_time = time.time()
+    st.stop()
+
+# 보기 출력
+choice = st.radio("뜻을 고르세요:", options, index=None)
+
+# 제출 버튼
+if st.button("제출"):
+    if choice == correct_meaning:
+        st.success("✅ 정답!")
+        st.session_state.score += 1
+    else:
+        st.error(f"❌ 오답! 정답은: {correct_meaning}")
+
+    st.session_state.question_num += 1
+    st.session_state.current_q = generate_question()
+    st.session_state.start_time = time.time()
+
+st.write("---")
+st.write(f"현재 점수: {st.session_state.score} / {st.session_state.question_num - 1}")
