@@ -1,6 +1,48 @@
 import streamlit as st
 import random
 import pandas as pd
+
+st.title("📝 영어 단어 퀴즈 앱")
+
+# CSV 파일 업로드
+uploaded_file = st.file_uploader("📂 단어장이 담긴 CSV 파일을 업로드하세요 (영어, 뜻)", type="csv")
+
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    words = dict(zip(df["영어"], df["뜻"]))
+
+    mode = st.radio("퀴즈 모드 선택", ["객관식", "주관식"])
+
+    if mode == "객관식":
+        eng, kor = random.choice(list(words.items()))
+        options = random.sample(list(words.values()), 3) + [kor]
+        random.shuffle(options)
+
+        st.subheader(f"❓ '{eng}' 의 뜻은 무엇일까요?")
+        choice = st.radio("정답을 고르세요:", options)
+
+        if st.button("정답 확인"):
+            if choice == kor:
+                st.success("✅ 정답!")
+            else:
+                st.error(f"❌ 오답! 정답은 {kor}")
+
+    elif mode == "주관식":
+        eng, kor = random.choice(list(words.items()))
+        st.subheader(f"❓ '{kor}' 의 영어 단어는?")
+        answer = st.text_input("정답을 입력하세요:")
+
+        if st.button("정답 확인"):
+            if answer.strip().lower() == eng.lower():
+                st.success("✅ 정답!")
+            else:
+                st.error(f"❌ 오답! 정답은 {eng}")
+
+else:
+    st.info("CSV 파일을 업로드하면 퀴즈를 시작할 수 있어요.")
+import streamlit as st
+import random
+import pandas as pd
 import time
 
 st.set_page_config(page_title="고등학생 영어 객관식 퀴즈", page_icon="📚")
