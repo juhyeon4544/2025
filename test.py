@@ -73,7 +73,6 @@ elif st.session_state.step == "외우기":
             st.session_state.quiz_score = 0
             st.session_state.quiz_total = len(words)
             st.session_state.current_word = random.choice(words)
-        st.experimental_rerun()  # 외우기 단계에서만 rerun
 
 # 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
