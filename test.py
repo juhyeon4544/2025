@@ -76,8 +76,7 @@ elif st.session_state.step == "외우기":
         st.session_state.quiz_input = ""
         st.session_state.quiz_mode = st.radio("퀴즈 모드 선택:", ["단어→뜻", "뜻→단어"])
         st.session_state.current_word = random.choice(words)
-
-# 3️⃣ 퀴즈 단계
+# 퀴즈 단계
 elif st.session_state.step == "퀴즈":
     if st.session_state.level == "쉬움":
         words = easy_words
@@ -86,6 +85,7 @@ elif st.session_state.step == "퀴즈":
     else:
         words = hard_words
 
+    # 모든 문제 완료 시
     if st.session_state.quiz_total == 0:
         st.success("🎉 퀴즈 완료!")
         st.write(f"점수: {st.session_state.quiz_score} / {len(words)}")
@@ -94,7 +94,7 @@ elif st.session_state.step == "퀴즈":
                 st.session_state.step = "외우기"
         st.stop()
 
-    # 현재 문제
+    # 현재 문제 선택
     if st.session_state.current_word is None:
         st.session_state.current_word = random.choice(words)
 
@@ -103,15 +103,15 @@ elif st.session_state.step == "퀴즈":
 
     if st.session_state.quiz_mode == "단어→뜻":
         st.write(f"'{eng}' 의 뜻은 무엇일까요?")
-        st.session_state.quiz_input = st.text_input("정답 입력:", value="", key="quiz_input_field")
+        user_input = st.text_input("정답 입력:", key="quiz_input_field")
         correct = kor
     else:
         st.write(f"'{kor}' 의 단어는 무엇일까요?")
-        st.session_state.quiz_input = st.text_input("정답 입력:", value="", key="quiz_input_field")
+        user_input = st.text_input("정답 입력:", key="quiz_input_field")
         correct = eng
 
     if st.button("확인"):
-        answer = st.session_state.quiz_input.strip()
+        answer = user_input.strip()
         if answer == correct:
             st.success("✅ 정답!")
             st.session_state.quiz_score += 1
@@ -128,7 +128,4 @@ elif st.session_state.step == "퀴즈":
             st.session_state.current_word = None
 
         # 입력창 초기화
-        st.session_state.quiz_input = ""
-
-    st.write(f"남은 문제: {st.session_state.quiz_total}")
-    st.write(f"현재 점수: {st.session_state.quiz_score}")
+        st.session_state.quiz_input_field = ""
