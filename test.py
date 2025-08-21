@@ -25,7 +25,7 @@ hard_words = [("inevitable", "피할 수 없는"), ("significant", "중요한"),
 # 세션 상태 초기화
 # -----------------------------
 if "step" not in st.session_state:
-    st.session_state.step = "난이도"  # 난이도 선택 단계
+    st.session_state.step = "난이도"
 if "level" not in st.session_state:
     st.session_state.level = "쉬움"
 if "index" not in st.session_state:
@@ -54,7 +54,6 @@ if st.session_state.step == "난이도":
 
 # 2️⃣ 단어 외우기
 elif st.session_state.step == "외우기":
-    # 선택한 난이도 단어 가져오기
     if st.session_state.level == "쉬움":
         words = easy_words
     elif st.session_state.level == "중간":
@@ -74,7 +73,7 @@ elif st.session_state.step == "외우기":
             st.session_state.quiz_score = 0
             st.session_state.quiz_total = len(words)
             st.session_state.current_word = random.choice(words)
-        st.experimental_rerun()
+        st.experimental_rerun()  # 외우기 단계에서만 rerun
 
 # 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
@@ -107,8 +106,6 @@ elif st.session_state.step == "퀴즈":
         else:
             st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(words)}")
             st.session_state.current_word = None
-
-        st.experimental_rerun()
 
     st.write(f"남은 문제: {st.session_state.quiz_total}")
     st.write(f"현재 점수: {st.session_state.quiz_score}")
