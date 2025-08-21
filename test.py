@@ -28,23 +28,18 @@ if "step" not in st.session_state:
     st.session_state.step = "난이도"
 if "level" not in st.session_state:
     st.session_state.level = "쉬움"
+if "index" not in st.session_state:
+    st.session_state.index = 0
 if "quiz_score" not in st.session_state:
     st.session_state.quiz_score = 0
 if "quiz_total" not in st.session_state:
     st.session_state.quiz_total = 0
 if "current_word" not in st.session_state:
     st.session_state.current_word = None
-if "wrong_words" not in st.session_state:
-    st.session_state.wrong_words = []
-if "quiz_mode" not in st.session_state:
-    st.session_state.quiz_mode = "단어→뜻"
-if "quiz_input" not in st.session_state:
-    st.session_state.quiz_input = ""
 
 # -----------------------------
 # 단계별 화면
 # -----------------------------
-
 # 1️⃣ 난이도 선택
 if st.session_state.step == "난이도":
     st.subheader("난이도를 선택하세요")
@@ -55,6 +50,7 @@ if st.session_state.step == "난이도":
     )
     if st.button("선택 완료"):
         st.session_state.step = "외우기"
+        st.session_state.index = 0
 
 # 2️⃣ 단어 외우기
 elif st.session_state.step == "외우기":
@@ -66,17 +62,17 @@ elif st.session_state.step == "외우기":
         words = hard_words
 
     st.subheader(f"{st.session_state.level} 단어 외우기")
-    for eng, kor in words:
-        st.markdown(f"**{eng}**  👉  {kor}")
+    eng, kor = words[st.session_state.index]
+    st.markdown(f"**단어:** {eng}  👉  **뜻:** {kor}")
+    st.write(f"{st.session_state.index + 1} / {len(words)}")
 
-    if st.button("퀴즈 시작"):
-        st.session_state.step = "퀴즈"
-        st.session_state.quiz_score = 0
-        st.session_state.quiz_total = len(words)
-        st.session_state.wrong_words = []
-        st.session_state.quiz_mode = st.radio("퀴즈 모드 선택:", ["단어→뜻", "뜻→단어"])
-        st.session_state.current_word = random.choice(words)
-        st.session_state.quiz_input = ""  # 입력창 초기화
+    if st.button("다음 단어"):
+        st.session_state.index += 1
+        if st.session_state.index >= len(words):
+            st.session_state.step = "퀴즈"
+            st.session_state.quiz_score = 0
+            st.session_state.quiz_total = len(words)
+            st.session_state.current_word = random.choice(words)
 
 # 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
@@ -87,49 +83,28 @@ elif st.session_state.step == "퀴즈":
     else:
         words = hard_words
 
-    # 모든 문제 완료 시
-    if st.session_state.quiz_total == 0:
-        st.success("🎉 퀴즈 완료!")
-        st.write(f"점수: {st.session_state.quiz_score} / {len(words)}")
-        if st.session_state.wrong_words:
-            if st.button("틀린 단어 복습"):
-                st.session_state.step = "외우기"
-        st.stop()
-
-    # 현재 문제 선택
     if st.session_state.current_word is None:
         st.session_state.current_word = random.choice(words)
 
     eng, kor = st.session_state.current_word
     st.subheader("❓ 퀴즈 시작!")
+    st.write(f"'{eng}' 의 뜻은 무엇일까요?")
+    answer = st.text_input("정답 입력:", key="quiz_input")
 
-    # text_input 오류 제거: key만 사용, value 초기화는 get으로
-    if st.session_state.quiz_mode == "단어→뜻":
-        st.write(f"'{eng}' 의 뜻은 무엇일까요?")
-        st.text_input("정답 입력:", key="quiz_input", value=st.session_state.get("quiz_input", ""))
-        correct = kor
-    else:
-        st.write(f"'{kor}' 의 단어는 무엇일까요?")
-        st.text_input("정답 입력:", key="quiz_input", value=st.session_state.get("quiz_input", ""))
-        correct = eng
-
-    # ✅ 확인 버튼 클릭 시 정답 체크 + 다음 문제
     if st.button("확인"):
-        answer = st.session_state.quiz_input.strip()  # key로 자동 저장된 값 사용
-        if answer == correct:
+        if answer.strip() == kor:
             st.success("✅ 정답!")
             st.session_state.quiz_score += 1
         else:
-            st.error(f"❌ 오답! 정답은 {correct}")
-            st.session_state.wrong_words.append(st.session_state.current_word)
+            st.error(f"❌ 오답! 정답은 {kor}")
 
         st.session_state.quiz_total -= 1
 
-        # 다음 문제 선택
         if st.session_state.quiz_total > 0:
             st.session_state.current_word = random.choice(words)
         else:
+            st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(words)}")
             st.session_state.current_word = None
 
-        # 입력값 초기화
-        st.session_state.quiz_input = ""
+    st.write(f"남은 문제: {st.session_state.quiz_total}")
+    st.write(f"현재 점수: {st.session_state.quiz_score}")
