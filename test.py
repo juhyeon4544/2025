@@ -1,176 +1,124 @@
 import streamlit as st
 import random
+import pandas as pd
 import time
 
-st.set_page_config(page_title="영단어 퀴즈", layout="wide")
+st.set_page_config(page_title="고등학생 영어 객관식 퀴즈", page_icon="📚")
 
-# ---------------------------
-# CSS 스타일
-# ---------------------------
-st.markdown("""
-<style>
-.button-style {
-    width: 100%;
-    height: 70px;
-    font-size: 20px;
-    font-weight: bold;
-    margin: 5px 0;
-    border-radius: 12px;
-    border: none;
-    transition: 0.3s;
-    cursor: pointer;
-}
-.button-style:hover {
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    transform: scale(1.05);
-}
-.button-correct {
-    background-color: #4CAF50;
-    color: white;
-}
-.button-wrong {
-    background-color: #f44336;
-    color: white;
-}
-</style>
-""", unsafe_allow_html=True)
+# -----------------------------
+# 단어 데이터 (수능/모의고사 빈출)
+# -----------------------------
+word_list = [
+    {"word": "accomplishment", "meaning": "달성, 성취"},
+    {"word": "assumption", "meaning": "가정, 추정"},
+    {"word": "collapse", "meaning": "붕괴하다"},
+    {"word": "evaluate", "meaning": "평가하다"},
+    {"word": "consequence", "meaning": "결과, 결말"},
+    {"word": "derive", "meaning": "유래하다"},
+    {"word": "opportunity", "meaning": "기회"},
+    {"word": "participate", "meaning": "참여하다"},
+]
 
-# ---------------------------
-# 단어 데이터
-# ---------------------------
-word_list = {
-    "abandon": "버리다, 포기하다",
-    "accelerate": "가속하다, 촉진하다",
-    "acquire": "얻다, 습득하다",
-    "adapt": "적응하다",
-    "analyze": "분석하다",
-    "assume": "가정하다",
-    "collapse": "붕괴하다",
-    "contrast": "대조",
-    "crucial": "중요한",
-    "demonstrate": "증명하다"
-}
-
-TIME_LIMIT = 10
-TOTAL_QUESTIONS = 10
-
-# ---------------------------
+# -----------------------------
 # 세션 초기화
-# ---------------------------
-if "page" not in st.session_state:
-    st.session_state.page = "study"
+# -----------------------------
 if "score" not in st.session_state:
     st.session_state.score = 0
-if "question_num" not in st.session_state:
-    st.session_state.question_num = 0
-if "current_question" not in st.session_state:
-    st.session_state.current_question = None
-if "question_start" not in st.session_state:
-    st.session_state.question_start = None
-if "clicked_option" not in st.session_state:
-    st.session_state.clicked_option = None
-if "next_question_time" not in st.session_state:
-    st.session_state.next_question_time = None
+if "history" not in st.session_state:
+    st.session_state.history = []
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
+if "question" not in st.session_state:
+    st.session_state.question = None
+if "options" not in st.session_state:
+    st.session_state.options = None
+if "qtype" not in st.session_state:
+    st.session_state.qtype = None
 
-# ---------------------------
-# 새 문제 생성
-# ---------------------------
-def new_question():
-    eng_word = random.choice(list(word_list.keys()))
-    correct_meaning = word_list[eng_word]
-    wrong_options = random.sample([v for k,v in word_list.items() if v != correct_meaning], 3)
-    options = wrong_options + [correct_meaning]
+st.title("📖 고등학생 영어 객관식 퀴즈 (⏱️ 시간제한)")
+
+# -----------------------------
+# 문제/보기 생성 함수
+# -----------------------------
+def make_options(correct, all_options):
+    options = [correct]
+    while len(options) < 4:
+        choice = random.choice(all_options)
+        if choice not in options:
+            options.append(choice)
     random.shuffle(options)
-    st.session_state.current_question = {
-        "eng_word": eng_word,
-        "correct": correct_meaning,
-        "options": options
-    }
-    st.session_state.question_start = time.time()
-    st.session_state.clicked_option = None
-    st.session_state.next_question_time = None
+    return options
 
-# ---------------------------
-# 학습 화면
-# ---------------------------
-if st.session_state.page == "study":
-    st.title("📖 단어 학습하기")
-    st.write("먼저 단어를 외워보세요. 준비되면 '퀴즈 시작' 버튼을 누르세요.")
-    st.table({"영단어": list(word_list.keys()), "뜻": list(word_list.values())})
-    
-    if st.button("퀴즈 시작 🚀"):
-        st.session_state.page = "quiz"
-        st.session_state.score = 0
-        st.session_state.question_num = 0
-        st.session_state.current_question = None
-        new_question()
+# -----------------------------
+# 새로운 문제 출제
+# -----------------------------
+if st.session_state.question is None:
+    q = random.choice(word_list)
+    qtype = random.choice(["word_to_meaning", "meaning_to_word"])
+    if qtype == "word_to_meaning":
+        options = make_options(q["meaning"], [w["meaning"] for w in word_list])
+    else:
+        options = make_options(q["word"], [w["word"] for w in word_list])
 
-# ---------------------------
-# 퀴즈 화면
-# ---------------------------
-elif st.session_state.page == "quiz":
-    if st.session_state.current_question is None:
-        new_question()
-    q = st.session_state.current_question
+    st.session_state.question = q
+    st.session_state.qtype = qtype
+    st.session_state.options = options
+    st.session_state.start_time = time.time()
 
-    elapsed = int(time.time() - st.session_state.question_start)
-    remaining = max(TIME_LIMIT - elapsed, 0)
-    progress = remaining / TIME_LIMIT
+# -----------------------------
+# 문제 표시
+# -----------------------------
+q = st.session_state.question
+qtype = st.session_state.qtype
+options = st.session_state.options
 
-    st.title("📝 영단어 퀴즈")
-    st.subheader(f"문제 {st.session_state.question_num + 1} / {TOTAL_QUESTIONS}")
-    st.markdown(f"### '{q['eng_word']}' 의 뜻은 무엇일까요?")
-    st.progress(progress)
-    st.write(f"⏳ 남은 시간: {remaining}초")
+time_limit = 10  # 제한 시간 (초)
+elapsed = int(time.time() - st.session_state.start_time)
+remaining = max(0, time_limit - elapsed)
 
-    # 시간 초과 시 처리
-    if remaining <= 0 and st.session_state.clicked_option is None:
-        st.session_state.clicked_option = "timeout"
-        st.session_state.next_question_time = time.time() + 1.5
+st.write(f"⏱️ 남은 시간: **{remaining}초**")
 
-    # 버튼 표시
-    cols = st.columns(2)
-    for i, option in enumerate(q["options"]):
-        col = cols[i % 2]
-        if st.session_state.clicked_option is not None:
-            # 정답/오답 색상 적용
-            if option == q["correct"]:
-                style_class = "button-style button-correct"
-            elif option == st.session_state.clicked_option and st.session_state.clicked_option != "timeout":
-                style_class = "button-style button-wrong"
-            else:
-                style_class = "button-style"
-            col.markdown(f"<button class='{style_class}'>{option}</button>", unsafe_allow_html=True)
+if qtype == "word_to_meaning":
+    st.write(f"❓ 단어 **{q['word']}** 의 뜻은 무엇일까요?")
+else:
+    st.write(f"❓ 뜻 **{q['meaning']}** 에 해당하는 단어는 무엇일까요?")
+
+answer = st.radio("정답을 선택하세요:", options, index=None)
+
+# -----------------------------
+# 정답 처리
+# -----------------------------
+if st.button("제출"):
+    if elapsed > time_limit:
+        st.error("⏰ 시간 초과! 오답 처리됩니다.")
+        correct = q["meaning"] if qtype == "word_to_meaning" else q["word"]
+        st.error(f"정답은 {correct}")
+    else:
+        if qtype == "word_to_meaning":
+            correct = q["meaning"]
         else:
-            if col.button(option, key=f"opt_{i}"):
-                st.session_state.clicked_option = option
-                if option == q["correct"]:
-                    st.session_state.score += 1
-                st.session_state.next_question_time = time.time() + 1.5
+            correct = q["word"]
 
-    # 다음 문제 이동
-    if st.session_state.next_question_time and time.time() >= st.session_state.next_question_time:
-        st.session_state.question_num += 1
-        if st.session_state.question_num >= TOTAL_QUESTIONS:
-            st.session_state.page = "result"
-        st.session_state.current_question = None
-        st.session_state.question_start = None
-        st.session_state.clicked_option = None
-        st.session_state.next_question_time = None
-        st.experimental_rerun()  # 버튼 클릭 때만 안전하게 호출
+        if answer == correct:
+            st.session_state.score += 1
+            st.success("✅ 정답!")
+        else:
+            st.error(f"❌ 오답! 정답은 {correct}")
 
-# ---------------------------
-# 결과 화면
-# ---------------------------
-elif st.session_state.page == "result":
-    st.title("🏆 퀴즈 완료!")
-    st.write(f"최종 점수: {st.session_state.score} / {TOTAL_QUESTIONS}")
-    if st.button("다시하기 🔁"):
-        st.session_state.page = "study"
-        st.session_state.score = 0
-        st.session_state.question_num = 0
-        st.session_state.current_question = None
-        st.session_state.question_start = None
-        st.session_state.clicked_option = None
-        st.session_state.next_question_time = None
-        st.rerun()
+    # 기록 저장
+    st.session_state.history.append((qtype, q["word"], answer, "시간초과" if elapsed > time_limit else ""))
+
+    # 다음 문제로 초기화
+    st.session_state.question = None
+
+# -----------------------------
+# 점수 & 기록
+# -----------------------------
+st.markdown("---")
+st.write(f"📊 현재 점수: **{st.session_state.score}**")
+
+if st.button("기록 저장하기"):
+    df = pd.DataFrame(st.session_state.history, columns=["문제 유형", "문제(단어)", "내 답", "비고"])
+    df.to_csv("quiz_history.csv", index=False)
+    st.success("기록이 저장되었습니다!")
+
