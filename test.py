@@ -68,7 +68,7 @@ elif st.session_state.step == "외우기":
         st.session_state.quiz_total = len(words)
         st.session_state.current_word = random.choice(words)
 
-# 3️⃣ 퀴즈 단계
+# 3️⃣ 퀴즈 단계 (정답 시 바로 다음 단어)
 elif st.session_state.step == "퀴즈":
     if st.session_state.level == "쉬움":
         words = easy_words
@@ -94,6 +94,7 @@ elif st.session_state.step == "퀴즈":
 
         st.session_state.quiz_total -= 1
 
+        # 남은 문제가 있으면 다음 문제 선택
         if st.session_state.quiz_total > 0:
             st.session_state.current_word = random.choice(words)
         else:
