@@ -34,6 +34,8 @@ if "quiz_score" not in st.session_state:
     st.session_state.quiz_score = 0
 if "quiz_total" not in st.session_state:
     st.session_state.quiz_total = 0
+if "current_word" not in st.session_state:
+    st.session_state.current_word = None
 
 # -----------------------------
 # 단계별 화면
@@ -49,7 +51,6 @@ if st.session_state.step == "난이도":
     if st.button("선택 완료"):
         st.session_state.step = "외우기"
         st.session_state.index = 0
-        st.experimental_rerun()
 
 # 2️⃣ 단어 외우기
 elif st.session_state.step == "외우기":
@@ -70,9 +71,9 @@ elif st.session_state.step == "외우기":
         st.session_state.index += 1
         if st.session_state.index >= len(words):
             st.session_state.step = "퀴즈"
-            st.session_state.index = 0
             st.session_state.quiz_score = 0
             st.session_state.quiz_total = len(words)
+            st.session_state.current_word = random.choice(words)
         st.experimental_rerun()
 
 # 3️⃣ 퀴즈 단계
@@ -84,10 +85,13 @@ elif st.session_state.step == "퀴즈":
     else:
         words = hard_words
 
+    if st.session_state.current_word is None:
+        st.session_state.current_word = random.choice(words)
+
+    eng, kor = st.session_state.current_word
     st.subheader("❓ 퀴즈 시작!")
-    eng, kor = random.choice(words)
     st.write(f"'{eng}' 의 뜻은 무엇일까요?")
-    answer = st.text_input("정답 입력:")
+    answer = st.text_input("정답 입력:", key="quiz_input")
 
     if st.button("확인"):
         if answer.strip() == kor:
@@ -97,6 +101,13 @@ elif st.session_state.step == "퀴즈":
             st.error(f"❌ 오답! 정답은 {kor}")
 
         st.session_state.quiz_total -= 1
+
+        if st.session_state.quiz_total > 0:
+            st.session_state.current_word = random.choice(words)
+        else:
+            st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(words)}")
+            st.session_state.current_word = None
+
         st.experimental_rerun()
 
     st.write(f"남은 문제: {st.session_state.quiz_total}")
