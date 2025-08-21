@@ -76,6 +76,7 @@ elif st.session_state.step == "외우기":
         st.session_state.wrong_words = []
         st.session_state.quiz_mode = st.radio("퀴즈 모드 선택:", ["단어→뜻", "뜻→단어"])
         st.session_state.current_word = random.choice(words)
+        st.session_state.quiz_input = ""  # 입력창 초기화
 
 # 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
