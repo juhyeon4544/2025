@@ -37,7 +37,9 @@ if "current_word" not in st.session_state:
 if "wrong_words" not in st.session_state:
     st.session_state.wrong_words = []
 if "quiz_mode" not in st.session_state:
-    st.session_state.quiz_mode = "단어→뜻"  # 기본 모드
+    st.session_state.quiz_mode = "단어→뜻"
+if "quiz_input" not in st.session_state:
+    st.session_state.quiz_input = ""
 
 # -----------------------------
 # 단계별 화면
@@ -53,7 +55,7 @@ if st.session_state.step == "난이도":
     if st.button("선택 완료"):
         st.session_state.step = "외우기"
 
-# 2️⃣ 단어 외우기 (모두 표시)
+# 2️⃣ 단어 외우기
 elif st.session_state.step == "외우기":
     if st.session_state.level == "쉬움":
         words = easy_words
@@ -71,6 +73,7 @@ elif st.session_state.step == "외우기":
         st.session_state.quiz_score = 0
         st.session_state.quiz_total = len(words)
         st.session_state.wrong_words = []
+        st.session_state.quiz_input = ""
         st.session_state.quiz_mode = st.radio("퀴즈 모드 선택:", ["단어→뜻", "뜻→단어"])
         st.session_state.current_word = random.choice(words)
 
@@ -83,48 +86,49 @@ elif st.session_state.step == "퀴즈":
     else:
         words = hard_words
 
-    if st.session_state.current_word is None and st.session_state.quiz_total > 0:
-        st.session_state.current_word = random.choice(words)
-
-    if st.session_state.quiz_total > 0:
-        eng, kor = st.session_state.current_word
-        st.subheader("❓ 퀴즈 시작!")
-        if st.session_state.quiz_mode == "단어→뜻":
-            st.write(f"'{eng}' 의 뜻은 무엇일까요?")
-            answer = st.text_input("정답 입력:", key="quiz_input")
-        else:
-            st.write(f"'{kor}' 의 단어는 무엇일까요?")
-            answer = st.text_input("정답 입력:", key="quiz_input")
-
-        if st.button("확인"):
-            correct = kor if st.session_state.quiz_mode == "단어→뜻" else eng
-            if answer.strip() == correct:
-                st.success("✅ 정답!")
-                st.session_state.quiz_score += 1
-            else:
-                st.error(f"❌ 오답! 정답은 {correct}")
-                st.session_state.wrong_words.append(st.session_state.current_word)
-
-            st.session_state.quiz_total -= 1
-            if st.session_state.quiz_total > 0:
-                st.session_state.current_word = random.choice(words)
-            else:
-                st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(words)}")
-                st.session_state.current_word = None
-
-        st.write(f"남은 문제: {st.session_state.quiz_total}")
-        st.write(f"현재 점수: {st.session_state.quiz_score}")
-
-    else:
-        st.success("모든 문제가 완료되었습니다!")
+    if st.session_state.quiz_total == 0:
+        st.success("🎉 퀴즈 완료!")
+        st.write(f"점수: {st.session_state.quiz_score} / {len(words)}")
         if st.session_state.wrong_words:
             if st.button("틀린 단어 복습"):
                 st.session_state.step = "외우기"
-                # 틀린 단어만 외우도록 words 교체
-                if st.session_state.level == "쉬움":
-                    easy_words = st.session_state.wrong_words
-                elif st.session_state.level == "중간":
-                    medium_words = st.session_state.wrong_words
-                else:
-                    hard_words = st.session_state.wrong_words
-                st.session_state.wrong_words = []
+        st.stop()
+
+    # 현재 문제
+    if st.session_state.current_word is None:
+        st.session_state.current_word = random.choice(words)
+
+    eng, kor = st.session_state.current_word
+    st.subheader("❓ 퀴즈 시작!")
+
+    if st.session_state.quiz_mode == "단어→뜻":
+        st.write(f"'{eng}' 의 뜻은 무엇일까요?")
+        st.session_state.quiz_input = st.text_input("정답 입력:", value="", key="quiz_input_field")
+        correct = kor
+    else:
+        st.write(f"'{kor}' 의 단어는 무엇일까요?")
+        st.session_state.quiz_input = st.text_input("정답 입력:", value="", key="quiz_input_field")
+        correct = eng
+
+    if st.button("확인"):
+        answer = st.session_state.quiz_input.strip()
+        if answer == correct:
+            st.success("✅ 정답!")
+            st.session_state.quiz_score += 1
+        else:
+            st.error(f"❌ 오답! 정답은 {correct}")
+            st.session_state.wrong_words.append(st.session_state.current_word)
+
+        st.session_state.quiz_total -= 1
+
+        # 다음 문제 선택
+        if st.session_state.quiz_total > 0:
+            st.session_state.current_word = random.choice(words)
+        else:
+            st.session_state.current_word = None
+
+        # 입력창 초기화
+        st.session_state.quiz_input = ""
+
+    st.write(f"남은 문제: {st.session_state.quiz_total}")
+    st.write(f"현재 점수: {st.session_state.quiz_score}")
