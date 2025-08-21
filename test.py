@@ -103,19 +103,19 @@ elif st.session_state.step == "퀴즈":
     eng, kor = st.session_state.current_word
     st.subheader("❓ 퀴즈 시작!")
 
-    # text_input value로 입력창 초기화 관리
+    # text_input 오류 제거: key만 사용, value 초기화는 get으로
     if st.session_state.quiz_mode == "단어→뜻":
         st.write(f"'{eng}' 의 뜻은 무엇일까요?")
-        st.session_state.quiz_input = st.text_input("정답 입력:", value=st.session_state.quiz_input, key="quiz_input")
+        st.text_input("정답 입력:", key="quiz_input", value=st.session_state.get("quiz_input", ""))
         correct = kor
     else:
         st.write(f"'{kor}' 의 단어는 무엇일까요?")
-        st.session_state.quiz_input = st.text_input("정답 입력:", value=st.session_state.quiz_input, key="quiz_input")
+        st.text_input("정답 입력:", key="quiz_input", value=st.session_state.get("quiz_input", ""))
         correct = eng
 
     # ✅ 확인 버튼 클릭 시 정답 체크 + 다음 문제
     if st.button("확인"):
-        answer = st.session_state.quiz_input.strip()
+        answer = st.session_state.quiz_input.strip()  # key로 자동 저장된 값 사용
         if answer == correct:
             st.success("✅ 정답!")
             st.session_state.quiz_score += 1
@@ -131,5 +131,5 @@ elif st.session_state.step == "퀴즈":
         else:
             st.session_state.current_word = None
 
-        # 입력값 초기화 (text_input value로 처리)
+        # 입력값 초기화
         st.session_state.quiz_input = ""
