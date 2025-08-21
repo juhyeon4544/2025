@@ -28,8 +28,6 @@ if "step" not in st.session_state:
     st.session_state.step = "난이도"
 if "level" not in st.session_state:
     st.session_state.level = "쉬움"
-if "index" not in st.session_state:
-    st.session_state.index = 0
 if "quiz_score" not in st.session_state:
     st.session_state.quiz_score = 0
 if "quiz_total" not in st.session_state:
@@ -50,9 +48,8 @@ if st.session_state.step == "난이도":
     )
     if st.button("선택 완료"):
         st.session_state.step = "외우기"
-        st.session_state.index = 0
 
-# 2️⃣ 단어 외우기
+# 2️⃣ 단어 외우기 (한 번에 모두 표시)
 elif st.session_state.step == "외우기":
     if st.session_state.level == "쉬움":
         words = easy_words
@@ -62,17 +59,14 @@ elif st.session_state.step == "외우기":
         words = hard_words
 
     st.subheader(f"{st.session_state.level} 단어 외우기")
-    eng, kor = words[st.session_state.index]
-    st.markdown(f"**단어:** {eng}  👉  **뜻:** {kor}")
-    st.write(f"{st.session_state.index + 1} / {len(words)}")
+    for eng, kor in words:
+        st.markdown(f"**{eng}**  👉  {kor}")
 
-    if st.button("다음 단어"):
-        st.session_state.index += 1
-        if st.session_state.index >= len(words):
-            st.session_state.step = "퀴즈"
-            st.session_state.quiz_score = 0
-            st.session_state.quiz_total = len(words)
-            st.session_state.current_word = random.choice(words)
+    if st.button("퀴즈 시작"):
+        st.session_state.step = "퀴즈"
+        st.session_state.quiz_score = 0
+        st.session_state.quiz_total = len(words)
+        st.session_state.current_word = random.choice(words)
 
 # 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
