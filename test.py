@@ -38,6 +38,10 @@ if "wrong_words" not in st.session_state:
     st.session_state.wrong_words = []
 if "quiz_mode" not in st.session_state:
     st.session_state.quiz_mode = "단어→뜻"
+if "next_question" not in st.session_state:
+    st.session_state.next_question = False
+if "quiz_input" not in st.session_state:
+    st.session_state.quiz_input = ""
 
 # -----------------------------
 # 단계별 화면
@@ -73,6 +77,7 @@ elif st.session_state.step == "외우기":
         st.session_state.wrong_words = []
         st.session_state.quiz_mode = st.radio("퀴즈 모드 선택:", ["단어→뜻", "뜻→단어"])
         st.session_state.current_word = random.choice(words)
+        st.experimental_rerun()  # 새 화면으로 넘어가기
 
 # 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
@@ -90,6 +95,7 @@ elif st.session_state.step == "퀴즈":
         if st.session_state.wrong_words:
             if st.button("틀린 단어 복습"):
                 st.session_state.step = "외우기"
+                st.experimental_rerun()
         st.stop()
 
     # 현재 문제 선택
@@ -101,15 +107,15 @@ elif st.session_state.step == "퀴즈":
 
     if st.session_state.quiz_mode == "단어→뜻":
         st.write(f"'{eng}' 의 뜻은 무엇일까요?")
-        user_input = st.text_input("정답 입력:", key="quiz_input")
+        st.session_state.quiz_input = st.text_input("정답 입력:", value="", key="quiz_input_field")
         correct = kor
     else:
         st.write(f"'{kor}' 의 단어는 무엇일까요?")
-        user_input = st.text_input("정답 입력:", key="quiz_input")
+        st.session_state.quiz_input = st.text_input("정답 입력:", value="", key="quiz_input_field")
         correct = eng
 
     if st.button("확인"):
-        answer = user_input.strip()
+        answer = st.session_state.quiz_input.strip()
         if answer == correct:
             st.success("✅ 정답!")
             st.session_state.quiz_score += 1
@@ -122,7 +128,9 @@ elif st.session_state.step == "퀴즈":
         # 다음 문제 선택 또는 종료
         if st.session_state.quiz_total > 0:
             st.session_state.current_word = random.choice(words)
-            st.experimental_rerun()  # 입력창 초기화 & 다음 문제 표시
         else:
             st.session_state.current_word = None
-            st.experimental_rerun()
+
+        # 입력창 초기화 & 화면 새로고침
+        st.session_state.quiz_input_field = ""
+        st.experimental_rerun()
