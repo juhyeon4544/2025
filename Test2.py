@@ -1,7 +1,21 @@
 import streamlit as st
 import random
 
+# ------------------------------
+# Streamlit rerun 호환성 처리
+# ------------------------------
+if hasattr(st, "rerun"):
+    rerun = st.rerun
+elif hasattr(st, "experimental_rerun"):
+    rerun = st.experimental_rerun
+else:
+    def rerun():
+        st.warning("현재 Streamlit 버전에서는 rerun을 지원하지 않습니다. "
+                   "가능하면 `pip install --upgrade streamlit`로 업그레이드하세요.")
+
+# ------------------------------
 # 단어 데이터
+# ------------------------------
 word_list = [
     {"word": "apple", "meaning": "사과"},
     {"word": "banana", "meaning": "바나나"},
@@ -15,7 +29,9 @@ word_list = [
     {"word": "teacher", "meaning": "선생님"}
 ]
 
+# ------------------------------
 # 세션 상태 초기화
+# ------------------------------
 if "score" not in st.session_state:
     st.session_state.score = 0
 if "question_index" not in st.session_state:
@@ -25,19 +41,22 @@ if "current_question" not in st.session_state:
 if "quiz_done" not in st.session_state:
     st.session_state.quiz_done = False
 
-# 문제 생성 함수
+# ------------------------------
+# 문제 생성 함수 및 퀴즈 초기화
+# ------------------------------
 def generate_question():
     return random.choice(word_list)
 
-# 퀴즈 초기화
 def reset_quiz():
     st.session_state.score = 0
     st.session_state.question_index = 0
     st.session_state.quiz_done = False
     st.session_state.current_question = generate_question()
-    st.rerun()
+    rerun()
 
-# 앱 제목
+# ------------------------------
+# 앱 UI
+# ------------------------------
 st.title("영단어 퀴즈 게임 🎮")
 
 # 퀴즈 시작
@@ -69,7 +88,7 @@ if not st.session_state.quiz_done:
                 else:
                     st.session_state.current_question = generate_question()
 
-                st.rerun()
+                rerun()
 
     with col2:
         if st.button("건너뛰기"):
@@ -78,7 +97,7 @@ if not st.session_state.quiz_done:
                 st.session_state.quiz_done = True
             else:
                 st.session_state.current_question = generate_question()
-            st.rerun()
+            rerun()
 
 else:
     st.header("퀴즈 완료 🎉")
