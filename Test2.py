@@ -1,64 +1,94 @@
 import streamlit as st
 import random
 
-# ==========================
-# 단어 리스트 (단어:뜻)
-# ==========================
-words = {
-    "apple": "사과",
-    "banana": "바나나",
-    "orange": "오렌지",
-    "grape": "포도",
-    "watermelon": "수박",
-    "cherry": "체리",
-    "peach": "복숭아",
-    "lemon": "레몬",
-    "strawberry": "딸기",
-    "kiwi": "키위"
-}
+st.title("📚 고등학생용 영어 단어 학습 앱")
 
-# ==========================
-# 세션 상태 초기화
-# ==========================
-if "word_list" not in st.session_state:
-    st.session_state.word_list = list(words.keys())
-    random.shuffle(st.session_state.word_list)
+# -----------------------------
+# 단어장
+# -----------------------------
+easy_words = [("apple", "사과"), ("banana", "바나나"), ("school", "학교"), ("teacher", "선생님"), 
+              ("book", "책"), ("friend", "친구"), ("water", "물"), ("food", "음식"), 
+              ("music", "음악"), ("movie", "영화")]
+
+medium_words = [("environment", "환경"), ("culture", "문화"), ("history", "역사"), ("science", "과학"),
+                ("technology", "기술"), ("education", "교육"), ("future", "미래"), ("health", "건강"),
+                ("travel", "여행"), ("society", "사회"), ("language", "언어"), ("hobby", "취미"),
+                ("success", "성공"), ("failure", "실패"), ("dream", "꿈"), ("freedom", "자유"),
+                ("responsibility", "책임"), ("knowledge", "지식"), ("opportunity", "기회"), ("experience", "경험")]
+
+hard_words = [("inevitable", "피할 수 없는"), ("significant", "중요한"), ("consequence", "결과"),
+              ("hypothesis", "가설"), ("complicated", "복잡한"), ("achievement", "성취"),
+              ("perspective", "관점"), ("contradiction", "모순"), ("comprehensive", "포괄적인"),
+              ("transition", "변화")]
+
+# -----------------------------
+# 세션 초기화
+# -----------------------------
+if "step" not in st.session_state:
+    st.session_state.step = "난이도"
+if "level" not in st.session_state:
+    st.session_state.level = "쉬움"
+if "index" not in st.session_state:
     st.session_state.index = 0
-    st.session_state.score = 0
+if "quiz_score" not in st.session_state:
+    st.session_state.quiz_score = 0
+if "quiz_words" not in st.session_state:
+    st.session_state.quiz_words = []
 
-st.title("영어 단어 객관식 게임 🎯")
-st.write("단어에 맞는 뜻을 선택하세요!")
-
-# ==========================
-# 게임 진행
-# ==========================
-if st.session_state.index < len(st.session_state.word_list):
-    current_word = st.session_state.word_list[st.session_state.index]
-    correct_meaning = words[current_word]
-
-    # 객관식 4개 보기 만들기
-    all_meanings = list(words.values())
-    choices = random.sample([m for m in all_meanings if m != correct_meaning], 3)
-    choices.append(correct_meaning)
-    random.shuffle(choices)
-
-    st.subheader(f"단어: {current_word}")
-    user_choice = st.radio("뜻을 선택하세요:", choices)
-
-    if st.button("제출"):
-        if user_choice == correct_meaning:
-            st.success("정답! 🎉")
-            st.session_state.score += 1
-        else:
-            st.error("오답! 😢")
-        st.session_state.index += 1
-        st.experimental_rerun()
-
-else:
-    st.balloons()
-    st.success(f"게임 종료! 점수: {st.session_state.score}/{len(st.session_state.word_list)}")
-    if st.button("다시 시작"):
+# -----------------------------
+# 단계별 화면
+# -----------------------------
+# 1️⃣ 난이도 선택
+if st.session_state.step == "난이도":
+    st.subheader("난이도를 선택하세요")
+    st.session_state.level = st.radio(
+        "", 
+        ["쉬움", "중간", "어려움"],
+        index=["쉬움", "중간", "어려움"].index(st.session_state.level)
+    )
+    if st.button("선택 완료"):
+        st.session_state.step = "외우기"
         st.session_state.index = 0
-        st.session_state.score = 0
-        random.shuffle(st.session_state.word_list)
-        st.experimental_rerun()
+
+# 2️⃣ 단어 외우기
+elif st.session_state.step == "외우기":
+    words = easy_words if st.session_state.level == "쉬움" else \
+            medium_words if st.session_state.level == "중간" else hard_words
+
+    st.subheader(f"{st.session_state.level} 단어 외우기")
+    eng, kor = words[st.session_state.index]
+    st.markdown(f"**단어:** {eng}  👉  **뜻:** {kor}")
+    st.write(f"{st.session_state.index + 1} / {len(words)}")
+
+    if st.button("다음 단어"):
+        st.session_state.index += 1
+        if st.session_state.index >= len(words):
+            st.session_state.step = "퀴즈"
+            st.session_state.quiz_score = 0
+            st.session_state.quiz_words = words.copy()  # 퀴즈용 단어 복사
+
+# 3️⃣ 퀴즈 단계
+elif st.session_state.step == "퀴즈":
+    if len(st.session_state.quiz_words) == 0:
+        st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score}")
+    else:
+        # 랜덤 단어 선택 후 리스트에서 제거
+        current_word = random.choice(st.session_state.quiz_words)
+        eng, kor = current_word
+        st.subheader("❓ 퀴즈 시작!")
+        st.write(f"'{eng}' 의 뜻은 무엇일까요?")
+
+        answer = st.text_input("정답 입력:", key="quiz_input")
+
+        if st.button("확인"):
+            if answer.strip() == kor:
+                st.success("✅ 정답!")
+                st.session_state.quiz_score += 1
+            else:
+                st.error(f"❌ 오답! 정답은 {kor}")
+
+            st.session_state.quiz_words.remove(current_word)  # 출제된 단어 제거
+            st.session_state.quiz_input = ""  # 입력창 초기화
+
+        st.write(f"남은 문제: {len(st.session_state.quiz_words)}")
+        st.write(f"현재 점수: {st.session_state.quiz_score}")
