@@ -157,12 +157,11 @@ with col3:
         st.session_state.streak = 0
         st.session_state.index += 1
         st.session_state.show_answer = False
-        st.experimental_rerun()
+        st.rerun()   # ✅ 변경됨
 
 # 문제형식별 인터페이스
 if st.session_state.mode == "객관식":
     choices = make_mc_choices(current, st.session_state.vocab, k=mc_choices)
-    # show choices as radio
     user_choice = st.radio("뜻을 고르세요:", choices, index=0)
     submitted = st.button("확인")
     if submitted:
@@ -178,7 +177,7 @@ if st.session_state.mode == "객관식":
             st.session_state.streak = 0
         st.session_state.index += 1
         st.session_state.show_answer = False
-        st.experimental_rerun()
+        st.rerun()   # ✅ 변경됨
 
 elif st.session_state.mode == "타이핑":
     user_input = st.text_input("뜻(한국어)을 입력하세요:", value="")
@@ -186,7 +185,6 @@ elif st.session_state.mode == "타이핑":
     if submitted:
         normalized_user = user_input.strip().lower()
         correct_answer = current[1].strip().lower()
-        # 단순 비교 혹은 부분 일치 허용
         correct = (normalized_user == correct_answer) or (normalized_user in correct_answer) or (correct_answer in normalized_user)
         st.session_state.answers.append((current[0], user_input, correct))
         st.session_state.last_submission = user_input
@@ -199,7 +197,7 @@ elif st.session_state.mode == "타이핑":
             st.session_state.streak = 0
         st.session_state.index += 1
         st.session_state.show_answer = False
-        st.experimental_rerun()
+        st.rerun()   # ✅ 변경됨
 
 # 정답 보기 (사용자가 누른 경우)
 if st.session_state.show_answer:
@@ -212,14 +210,11 @@ if st.session_state.index >= total:
     score = st.session_state.score
     st.subheader(f"점수: {score} / {total} ({score/total*100:.1f}%)")
     st.write(f"최대 연속 정답(마지막 스테이트 기준): {st.session_state.streak}")
-    # 상세 기록 테이블
     df = pd.DataFrame(st.session_state.answers, columns=["word","your_answer","correct"])
-    # 보기 편하게 정답 열 추가
     df["correct_meaning"] = [next((m for w,m in st.session_state.vocab if w==row[0]), "") for row in st.session_state.answers]
     st.write("상세 결과")
     st.dataframe(df)
 
-    # 재도전 버튼
     if st.button("처음으로 돌아가기 / 다시하기"):
         st.session_state.quiz_list = []
         st.session_state.index = 0
@@ -227,7 +222,7 @@ if st.session_state.index >= total:
         st.session_state.answers = []
         st.session_state.streak = 0
         st.session_state.show_answer = False
-        st.experimental_rerun()
+        st.rerun()   # ✅ 변경됨
 
 # 하단: 현재 상태 요약
 st.write("---")
