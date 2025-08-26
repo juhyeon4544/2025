@@ -32,7 +32,7 @@ DEFAULT_VOCAB = [
 
 # ---------- 유틸리티 ----------
 def load_vocab_from_uploaded(file) -> List[Tuple[str,str]]:
-    """CSV/TXT 업로드를 처리: 각 줄 'word,meaning'"""
+    """CSV/TXT 업로드 처리: 각 줄 'word,meaning'"""
     try:
         df = pd.read_csv(file, header=None, names=["word","meaning"])
         pairs = [(str(r["word"]).strip(), str(r["meaning"]).strip()) for _, r in df.iterrows() if pd.notna(r["word"])]
@@ -48,9 +48,8 @@ def load_vocab_from_uploaded(file) -> List[Tuple[str,str]]:
         return pairs
 
 def make_mc_choices(correct: Tuple[str,str], pool: List[Tuple[str,str]], k=4):
-    """객관식 보기 생성 (뜻 보기)"""
+    """객관식 보기 생성"""
     choices = [correct[1]]
-    # 뽑을 후보: pool 중에서 correct 뜻이 아닌 것
     candidates = [m for (w,m) in pool if m != correct[1]]
     random.shuffle(candidates)
     for c in candidates[:max(0,k-1)]:
@@ -92,7 +91,7 @@ def start_quiz(n_questions: int, shuffle_questions: bool):
 
 # ---------- 레이아웃 ----------
 st.title("🇬🇧 영단어 퀴즈 게임")
-st.caption("객관식 또는 타이핑으로 실력을 체크해보세요. CSV 업로드 지원(형식: word,meaning)")
+st.caption("객관식 또는 타이핑으로 실력을 체크해보세요. CSV 업로드 지원 (형식: word,meaning)")
 
 init_session()
 
@@ -104,9 +103,9 @@ with st.sidebar:
             pairs = load_vocab_from_uploaded(uploaded)
             if pairs:
                 st.session_state.vocab = pairs
-                st.success(f"업로드 완료: {len(pairs)}개 단어가 로드되었습니다.")
+                st.success(f"업로드 완료: {len(pairs)}개 단어 로드됨")
             else:
-                st.warning("파일에서 유효한 단어를 찾지 못했습니다. 형식: word,meaning")
+                st.warning("유효한 단어를 찾지 못했습니다. 형식: word,meaning")
         except Exception as e:
             st.error("파일 로드 실패: " + str(e))
 
@@ -120,13 +119,13 @@ with st.sidebar:
     st.write(f"현재 단어장: {len(st.session_state.vocab)}개")
     if st.button("퀴즈 시작 / 재시작"):
         if len(st.session_state.vocab) == 0:
-            st.warning("단어장이 비어있습니다. 업로드하거나 기본 단어장을 사용하세요.")
+            st.warning("단어장이 비어있습니다.")
         else:
             start_quiz(int(n_questions), shuffle_q)
 
 # ---------- 메인 화면 ----------
 if not st.session_state.quiz_list:
-    st.info("왼쪽에서 설정하고 '퀴즈 시작' 버튼을 눌러서 시작하세요.\n샘플 단어장이 기본으로 설정되어 있습니다.")
+    st.info("왼쪽에서 설정 후 '퀴즈 시작' 버튼을 눌러 시작하세요.")
     st.write("샘플 단어 예시:")
     st.write(pd.DataFrame(st.session_state.vocab[:10], columns=["word","meaning"]))
     st.stop()
@@ -152,14 +151,13 @@ with col2:
         st.session_state.show_answer = True
 with col3:
     if st.button("다음 문제 건너뛰기"):
-        # 기록은 '스킵'으로 저장 (정답 아님)
         st.session_state.answers.append((current[0], None, False))
         st.session_state.streak = 0
         st.session_state.index += 1
         st.session_state.show_answer = False
         st.rerun()   # ✅ 변경됨
 
-# 문제형식별 인터페이스
+# 문제 형식별
 if st.session_state.mode == "객관식":
     choices = make_mc_choices(current, st.session_state.vocab, k=mc_choices)
     user_choice = st.radio("뜻을 고르세요:", choices, index=0)
@@ -199,17 +197,17 @@ elif st.session_state.mode == "타이핑":
         st.session_state.show_answer = False
         st.rerun()   # ✅ 변경됨
 
-# 정답 보기 (사용자가 누른 경우)
+# 정답 보기
 if st.session_state.show_answer:
     st.info(f"정답: {current[1]}")
 
-# 진행 끝났을 때 결과
+# 퀴즈 종료
 if st.session_state.index >= total:
     st.markdown("---")
     st.header("🎉 퀴즈 완료!")
     score = st.session_state.score
     st.subheader(f"점수: {score} / {total} ({score/total*100:.1f}%)")
-    st.write(f"최대 연속 정답(마지막 스테이트 기준): {st.session_state.streak}")
+    st.write(f"최대 연속 정답: {st.session_state.streak}")
     df = pd.DataFrame(st.session_state.answers, columns=["word","your_answer","correct"])
     df["correct_meaning"] = [next((m for w,m in st.session_state.vocab if w==row[0]), "") for row in st.session_state.answers]
     st.write("상세 결과")
@@ -224,11 +222,11 @@ if st.session_state.index >= total:
         st.session_state.show_answer = False
         st.rerun()   # ✅ 변경됨
 
-# 하단: 현재 상태 요약
+# 상태 요약
 st.write("---")
 col_a, col_b, col_c = st.columns(3)
 col_a.metric("점수", f"{st.session_state.score} / {total}")
 col_b.metric("현재 문제", f"{idx+1} / {total}")
-col_c.metric("연속 정답(streak)", f"{st.session_state.streak}")
+col_c.metric("연속 정답", f"{st.session_state.streak}")
 
-st.caption("앱 개선 아이디어: 이미지 연결, 발음(예: gTTS), 정답 유사도 더 엄격/완화, 단어 레벨(초중고/토익 등) 분류 추가")
+st.caption("앱 개선 아이디어: 발음 추가, 정답 유사도 개선, 단어 레벨별 필터, 점수 저장 등")
