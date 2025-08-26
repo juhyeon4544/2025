@@ -19,7 +19,6 @@ if "input_value" not in st.session_state:
     st.session_state.input_value = ""
 
 st.title("🎯 영단어 퀴즈 게임")
-
 st.write("다음 단어의 뜻을 입력하세요:")
 
 st.subheader(f"{st.session_state.current_word}")
