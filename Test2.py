@@ -18,9 +18,11 @@ if "current_word" not in st.session_state:
 if "input_value" not in st.session_state:
     st.session_state.input_value = ""
 
+# --- 앱 제목 ---
 st.title("🎯 영단어 퀴즈 게임")
 st.write("다음 단어의 뜻을 입력하세요:")
 
+# --- 문제 표시 ---
 st.subheader(f"{st.session_state.current_word}")
 
 # --- 사용자 입력 ---
@@ -41,4 +43,5 @@ if st.button("제출"):
     st.session_state.current_word = random.choice(list(word_dict.keys()))
     st.session_state.input_value = ""  # 입력창 초기화
 
+# --- 점수 표시 ---
 st.write(f"현재 점수: {st.session_state.score}")
