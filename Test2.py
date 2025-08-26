@@ -62,4 +62,3 @@ else:
         st.session_state.score = 0
         random.shuffle(st.session_state.word_list)
         st.experimental_rerun()
-
