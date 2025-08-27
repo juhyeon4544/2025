@@ -114,7 +114,6 @@ elif st.session_state.step == "퀴즈":
             st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(st.session_state.quiz_words)}")
             del st.session_state.quiz_words  # 초기화
         else:
-            st.experimental_rerun()
-
+            st.rerun()
     st.write(f"진행 상황: {st.session_state.quiz_index + 1} / {len(st.session_state.quiz_words)}")
     st.write(f"현재 점수: {st.session_state.quiz_score}")
