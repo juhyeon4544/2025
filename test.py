@@ -90,28 +90,55 @@ elif st.session_state.step == "퀴즈":
              else medium_words if st.session_state.level == "중간"
              else hard_words)
 
-    # 현재 문제
-    eng, kor = st.session_state.quiz_words[st.session_state.quiz_index]
+    # 오답 기록 초기화 (처음만)
+    if "wrong_answers" not in st.session_state:
+        st.session_state.wrong_answers = []
 
-    st.subheader("❓ 퀴즈 시작!")
-    st.write(f"'{eng}' 의 뜻은 무엇일까요?")
+    # 퀴즈 종료 조건 확인
+    if st.session_state.quiz_index >= len(st.session_state.quiz_words):
+        st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(st.session_state.quiz_words)}")
 
-    # 문제 번호 기반 key → 자동 초기화
-    answer = st.text_input("정답 입력:", key=f"quiz_input_{st.session_state.quiz_index}")
-
-    if st.button("확인"):
-        if answer.strip() == kor:
-            st.success("✅ 정답!")
-            st.session_state.quiz_score += 1
+        # 틀린 문제 보여주기
+        if st.session_state.wrong_answers:
+            st.subheader("❌ 틀린 문제 복습")
+            for eng, correct, user_answer in st.session_state.wrong_answers:
+                st.write(f"- **{eng}** → 정답: {correct} (내 답: {user_answer})")
         else:
-            st.error(f"❌ 오답! 정답은 {kor}")
+            st.info("모든 문제를 맞췄습니다! 🎯")
 
-        st.session_state.quiz_index += 1
+        # 다시 시작 버튼
+        if st.button("처음으로 돌아가기"):
+            # 상태 초기화
+            st.session_state.step = "난이도"
+            st.session_state.level = None
+            st.session_state.index = 0
+            if "quiz_words" in st.session_state:
+                del st.session_state.quiz_words
+            if "wrong_answers" in st.session_state:
+                del st.session_state.wrong_answers
+            st.rerun()
 
-        if st.session_state.quiz_index >= len(st.session_state.quiz_words):
-            st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(st.session_state.quiz_words)}")
-            st.session_state.current_word = None
-        st.rerun()
+    else:
+        # 현재 문제
+        eng, kor = st.session_state.quiz_words[st.session_state.quiz_index]
 
-    st.write(f"진행 상황: {st.session_state.quiz_index + 1} / {len(st.session_state.quiz_words)}")
-    st.write(f"현재 점수: {st.session_state.quiz_score}")
+        st.subheader("❓ 퀴즈 시작!")
+        st.write(f"'{eng}' 의 뜻은 무엇일까요?")
+
+        # 문제 번호 기반 key → 자동 초기화
+        answer = st.text_input("정답 입력:", key=f"quiz_input_{st.session_state.quiz_index}")
+
+        if st.button("확인"):
+            if answer.strip() == kor:
+                st.success("✅ 정답!")
+                st.session_state.quiz_score += 1
+            else:
+                st.error(f"❌ 오답! 정답은 {kor}")
+                # 오답 기록 저장
+                st.session_state.wrong_answers.append((eng, kor, answer.strip()))
+
+            st.session_state.quiz_index += 1
+            st.rerun()
+
+        st.write(f"진행 상황: {st.session_state.quiz_index + 1} / {len(st.session_state.quiz_words)}")
+        st.write(f"현재 점수: {st.session_state.quiz_score}")
