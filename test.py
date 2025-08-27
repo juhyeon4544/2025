@@ -1,4 +1,3 @@
-
 import streamlit as st
 import random
 
@@ -28,7 +27,7 @@ hard_words = [("inevitable", "피할 수 없는"), ("significant", "중요한"),
 if "step" not in st.session_state:
     st.session_state.step = "난이도"
 if "level" not in st.session_state:
-    st.session_state.level = "쉬움"
+    st.session_state.level = None
 if "index" not in st.session_state:
     st.session_state.index = 0
 if "quiz_score" not in st.session_state:
@@ -44,14 +43,22 @@ if "current_word" not in st.session_state:
 # 1️⃣ 난이도 선택
 if st.session_state.step == "난이도":
     st.subheader("난이도를 선택하세요")
-    st.session_state.level = st.radio(
-        "", 
-        ["쉬움", "중간", "어려움"],
-        index=["쉬움", "중간", "어려움"].index(st.session_state.level)
+
+    options = ["쉬움", "중간", "어려움"]
+    level_choice = st.selectbox(
+        "",
+        options,
+        index=None,  # 기본 선택 없음
+        placeholder="난이도를 골라주세요 🙌"
     )
-    if st.button("선택 완료"):
+
+    if level_choice:
+        st.session_state.level = level_choice
+
+    if st.button("선택 완료") and st.session_state.level:
         st.session_state.step = "외우기"
         st.session_state.index = 0
+        st.rerun()
 
 # 2️⃣ 단어 외우기
 elif st.session_state.step == "외우기":
@@ -73,24 +80,15 @@ elif st.session_state.step == "외우기":
             st.session_state.step = "퀴즈"
             st.session_state.quiz_score = 0
             st.session_state.quiz_total = len(words)
-            st.session_state.current_word = random.choice(words)
+            st.session_state.quiz_words = random.sample(words, len(words))  # 문제 순서 섞기
+            st.session_state.quiz_index = 0
+        st.rerun()
 
-# -----------------------------
-# 퀴즈 단계
-# -----------------------------
+# 3️⃣ 퀴즈 단계
 elif st.session_state.step == "퀴즈":
-    if st.session_state.level == "쉬움":
-        words = easy_words
-    elif st.session_state.level == "중간":
-        words = medium_words
-    else:
-        words = hard_words
-
-    # 퀴즈 단어 셔플 (처음 한 번만)
-    if "quiz_words" not in st.session_state:
-        st.session_state.quiz_words = random.sample(words, len(words))
-        st.session_state.quiz_index = 0
-        st.session_state.quiz_score = 0
+    words = (easy_words if st.session_state.level == "쉬움"
+             else medium_words if st.session_state.level == "중간"
+             else hard_words)
 
     # 현재 문제
     eng, kor = st.session_state.quiz_words[st.session_state.quiz_index]
@@ -98,7 +96,7 @@ elif st.session_state.step == "퀴즈":
     st.subheader("❓ 퀴즈 시작!")
     st.write(f"'{eng}' 의 뜻은 무엇일까요?")
 
-    # 문제 번호 기반 key → 입력창 자동 초기화
+    # 문제 번호 기반 key → 자동 초기화
     answer = st.text_input("정답 입력:", key=f"quiz_input_{st.session_state.quiz_index}")
 
     if st.button("확인"):
@@ -112,8 +110,8 @@ elif st.session_state.step == "퀴즈":
 
         if st.session_state.quiz_index >= len(st.session_state.quiz_words):
             st.success(f"🎉 퀴즈 완료! 점수: {st.session_state.quiz_score} / {len(st.session_state.quiz_words)}")
-            del st.session_state.quiz_words  # 초기화
-        else:
-            st.rerun()
+            st.session_state.current_word = None
+        st.rerun()
+
     st.write(f"진행 상황: {st.session_state.quiz_index + 1} / {len(st.session_state.quiz_words)}")
     st.write(f"현재 점수: {st.session_state.quiz_score}")
